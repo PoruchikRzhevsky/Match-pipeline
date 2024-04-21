@@ -17,7 +17,7 @@ nobj : 40
 
 # Colours for CC-diagram
 colour1 : 'BP-RP'
-colour2 : 'U-RP'
+colour2 : 'U-G'
 
 # Adjust the colour for the CC-diagram?
 adjust : True

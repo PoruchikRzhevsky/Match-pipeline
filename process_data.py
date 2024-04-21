@@ -53,7 +53,6 @@ def coords_reproject(cluster, coords, gaia_mag, plots=True):
         plot_cart(gaia_cart, uv_cart)
         print(f"Plots saved to plots folder.\n")
 
-
 def matching(cluster, gaia_mag, matchrad=3.0, trirad=0.001, nobj=40, plots=True):
     # Matching the datasets
     #http://spiff.rit.edu/match/match-0.16/match.html
@@ -299,7 +298,7 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         def update(val):
             x = sx.val
             y = sy.val
-            scatter_members.set_offsets(np.c_[gaia_filtered[colour1] + x, uv_filtered[colour2] + y])
+            scatter_ms.set_offsets(np.c_[ms[colour1] + x, ms[colour2] + y])
             ax.legend(loc='upper right', fontsize=15)
             fig.canvas.draw_idle()
             
@@ -316,7 +315,7 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         # Initial data points
         scatter_matched = ax.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
         scatter_members = ax.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
-        ax.plot(ms[colour1], ms[colour2], color='red', linewidth=2, label='Main sequence')
+        scatter_ms = ax.scatter(ms[colour1], ms[colour2], color='red', s=5, label='Main sequence')
 
         # Add sliders for interactive update
         axcolor = 'lightgoldenrodyellow'
@@ -348,9 +347,9 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         plt.tight_layout()  
 
         ax2.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
-        ax2.scatter(gaia_filtered [colour1]+x_new, uv_filtered [colour2]+y_new, color='magenta', s=17, marker='^', label=f'Membership ({colour1}={x_new:.2}, {colour2}={y_new:.2})')
+        ax2.scatter(gaia_filtered [colour1], uv_filtered [colour2], color='magenta', s=17, marker='^', label='Membership')
 
-        ax2.plot(ms[colour1], ms[colour2], color='red', linewidth=2, label='Main sequence')
+        ax2.plot(ms[colour1]+x_new, ms[colour2]+y_new, color='red', linewidth=2, label=f'Main sequence ({colour1}={x_new:.2}, {colour2}={y_new:.2})')
         ax2.legend(loc='upper right', fontsize=15)
 
         fig2.savefig(f'plots/{colour1}_{colour2}.png', bbox_inches='tight')
