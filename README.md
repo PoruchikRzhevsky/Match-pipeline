@@ -28,6 +28,8 @@ colours you want to use for CC-diagram: "colour1", "colour2"
 
 do you want to adjust positions of obtained stars on CC-diagram, in order to get they offset from MS in that filter: "adjust" (True - adjust / False - don't adjust)
 
+do you want to plot CMD?: "cmd" (True - plot / False - don't plot)
+
 7) Script has 4 procedures: 
 "coords_reproject" takes RA and DEC coordinates of objects from UV and GAIA data and using project_coords from Match script to project them on tangential plane and get X and Y coordinates. More information avaliable by link above. 
 
@@ -35,7 +37,7 @@ do you want to adjust positions of obtained stars on CC-diagram, in order to get
 
 "filtering" filters stars from Hunt catalogue of clusters memberships with probability of membership >0.7. At the end you will have lists of filtered stars from both datasets. 
 
-"cc_diagram" creates CC-diagram in colours given by "colour1", "colour2" in .yaml file. If you have "adjust : True", firstly you will see interactive plot, when you can adjust vertical and horisontal positions of filtered stars (pink triangles). After you adjusted them, so they will fit some part of MS, close poped up window and your plot will be saved in "plots/" directory. 
+"diagram" creates CC-diagram, or CM-diagram if "cmd: True", in colours/filteres given by "colour1", "colour2" in .yaml file. If you have "adjust : True", firstly you will see interactive plot, when you can adjust vertical and horisontal positions of filtered stars (pink triangles). After you adjusted them, so they will fit some part of MS, close poped up window and your plot will be saved in "plots/" directory. Note that adjustment works only for CC-digram, since only colours presented in MS data files.
 
 8) To run the script procedure by procedure, type in the command line: "python3 controller.py Gulliver_27 coords_reproject", where "Gulliver_27" is the name or your cluster and "coords_reproject" is the name of procedure.
 

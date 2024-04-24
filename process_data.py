@@ -141,24 +141,27 @@ def filtering(cluster, plots=True):
         print(f"\nPlotting filtered stars for {cluster}...")
         plot_filtered(gaia_filtered, uv_filtered, gaia_cart, uv_cart)
 
-def cc_diagram(cluster, colour1, colour2, adjust=False):
+def diagram(cluster, colour1, colour2, adjust=False, cmd=False):
     # Importing main sequence data
     print(f"\nImporting main sequence data...")
     ms1 = pd.read_csv('../MS_members/lines_UBPRPG_1.txt', delimiter = '\s+')
     ms2 = pd.read_csv('../MS_members/lines_UBPRPG_2.txt', delimiter = '\s+')
     print(f"Main sequence data imported.\n")
 
-    if colour1 in ms1.columns and colour2 in ms1.columns:
-        ms = ms1[[colour1, colour2]]
-    elif colour1 in ms2.columns and colour2 in ms2.columns:
-        ms = ms2[[colour1, colour2]]
+    if cmd:
+        pass
     else:
-        print(f"Combination of colours {colour1} and {colour2} cant be used, because filters are located in different files. Try another combination.")
+        if colour1 in ms1.columns and colour2 in ms1.columns:
+            ms = ms1[[colour1, colour2]]
+        elif colour1 in ms2.columns and colour2 in ms2.columns:
+            ms = ms2[[colour1, colour2]]
+        else:
+            print(f"Combination of colours {colour1} and {colour2} cant be used, because filters are located in different files. Try another combination.")
 
-    # Fitting MS
-    coeffs = np.polyfit(ms[colour1], ms[colour2], 9)
-    poly = np.poly1d(coeffs)
-    ms_fit = poly(ms[colour1])
+        # Fitting MS
+        coeffs = np.polyfit(ms[colour1], ms[colour2], 9)
+        poly = np.poly1d(coeffs)
+        ms_fit = poly(ms[colour1])
 
     # Importing filtered datasets
     print(f"\nImporting filtered datasets for {cluster}...")
@@ -173,22 +176,41 @@ def cc_diagram(cluster, colour1, colour2, adjust=False):
     print(f"Matched datasets imported.\n")
 
     # Calculating colors
-    print(f"\nCalculating colours {colour1} and {colour2}...")
+    print(f"\nCalculating for {colour1} and {colour2}...")
     gaia_filter_1 = f'phot_{colour1.split("-")[0].lower()}_mean_mag'
     gaia_filter_2 = f'phot_{colour1.split("-")[1].lower()}_mean_mag'
-    gaia_filter_3 = f'phot_{colour2.split("-")[1].lower()}_mean_mag'
 
     gaia_filtered[colour1] = gaia_filtered[gaia_filter_1] - gaia_filtered[gaia_filter_2]
-    uv_filtered[colour2] = uv_filtered['u'] - gaia_filtered[gaia_filter_3]
-
     gaia_matched[colour1] = gaia_matched[gaia_filter_1] - gaia_matched[gaia_filter_2]
-    uv_matched[colour2] = uv_matched['u'] - gaia_matched[gaia_filter_3]
+
+    if cmd: 
+        if colour2 == 'U':
+            uv_filtered[colour2] = uv_filtered['u'] 
+            uv_matched[colour2] = uv_matched['u'] 
+        else:
+            gaia_filter_3 = f'phot_{colour2.lower()}_mean_mag'
+
+            gaia_filtered[colour2] = gaia_filtered[gaia_filter_3]
+            gaia_matched[colour2] = gaia_matched[gaia_filter_3]
+    else:
+        gaia_filter_3 = f'phot_{colour2.split("-")[1].lower()}_mean_mag'
+
+        uv_filtered[colour2] = uv_filtered['u'] - gaia_filtered[gaia_filter_3]
+        uv_matched[colour2] = uv_matched['u'] - gaia_matched[gaia_filter_3]
+
     print(f"Colours calculated.\n")
 
     # Plotting colour-colour diagram
-    print(f"\nPlotting colour-colour diagram for {cluster} with colours {colour1} and {colour2}...")
-    plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, adjust)
-    print(f"Colour-colour diagram saved.\n")
+    if cmd: 
+        print(f"\nPlotting colour-magnitude diagram for {cluster} with colours {colour1} and {colour2}...")
+        if not os.path.isdir(f'plots/CMD'): os.system(f'mkdir -p plots/CMD')
+        plot_cmd(gaia_matched, uv_matched, gaia_filtered, uv_filtered, colour1, colour2)
+        print(f"Colour-magnitude diagram saved.\n")
+    else:
+        print(f"\nPlotting colour-colour diagram for {cluster} with colours {colour1} and {colour2}...")
+        if not os.path.isdir(f'plots/CC'): os.system(f'mkdir -p plots/CC')
+        plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, adjust)
+        print(f"Colour-colour diagram saved.\n")
 
 def radius(ra, dec):
     ra_min = np.min(ra)
@@ -352,7 +374,7 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         ax2.plot(ms[colour1]+x_new, ms[colour2]+y_new, color='red', linewidth=2, label=f'Main sequence ({colour1}={x_new:.2}, {colour2}={y_new:.2})')
         ax2.legend(loc='upper right', fontsize=15)
 
-        fig2.savefig(f'plots/{colour1}_{colour2}.png', bbox_inches='tight')
+        fig2.savefig(f'plots/CC/{colour1}_{colour2}.png', bbox_inches='tight')
     else:
         ax.set_xlabel(f"{colour1} [mag]")
         ax.xaxis.label.set_fontsize(25)
@@ -365,9 +387,33 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         plt.tight_layout()  
 
         ax.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
-        ax.scatter(gaia_filtered [colour1], uv_filtered [colour2], color='magenta', s=17, marker='^', label=f'Membership')
+        ax.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
 
         ax.plot(ms[colour1], ms[colour2], color='red', linewidth=2, label='Main sequence')
         ax.legend(loc='upper right', fontsize=15)
 
-        fig.savefig(f'plots/{colour1}_{colour2}.png', bbox_inches='tight')
+        fig.savefig(f'plots/CC/{colour1}_{colour2}.png', bbox_inches='tight')
+
+def plot_cmd(gaia_matched, uv_matched, gaia_filtered, uv_filtered, colour1, colour2):
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    ax.set_xlabel(f"{colour1} [mag]")
+    ax.xaxis.label.set_fontsize(25)
+    ax.set_ylabel(f"{colour2} [mag]")
+    ax.yaxis.label.set_fontsize(25)
+    ax.invert_yaxis()
+    ax.tick_params(axis="both", which="major", length=10, width=0.5, labelsize=20)
+    ax.tick_params(axis="both", which="minor", length=5, width=0.5, labelsize=20)
+    plt.grid(alpha=0.3)
+    plt.tight_layout()  
+
+    if colour2 == 'U':
+        ax.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
+        ax.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
+    else:
+        ax.scatter(gaia_matched[colour1], gaia_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
+        ax.scatter(gaia_filtered[colour1], gaia_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
+
+    ax.legend(loc='upper right', fontsize=15)
+
+    fig.savefig(f'plots/CMD/{colour1}_{colour2}.png', bbox_inches='tight')

@@ -6,7 +6,7 @@ from process_data import *
 
 sys.path.insert(1, ".")
 
-procedures = ["coords_reproject", "matching", "filtering", "cc_diagram",
+procedures = ["coords_reproject", "matching", "filtering", "diagram",
 			  "process"]
 
 def run_all(sample, procedure, args, cluster=False):
@@ -17,7 +17,7 @@ def run_all(sample, procedure, args, cluster=False):
 			run(sample, "coords_reproject", args) ; os.chdir(cwd)
 			run(sample, "matching", args) ; os.chdir(cwd)
 			run(sample, "filtering", args) ; os.chdir(cwd)
-			run(sample, "cc_diagram", args) ; os.chdir(cwd)
+			run(sample, "diagram", args) ; os.chdir(cwd)
 		elif procedure not in procedures:
 			print(f"{procedure.upper()} is not a procedure.")
 			print("\nProcedures:\n" + " \n".join(procedures))
@@ -44,7 +44,7 @@ def run(cluster, procedure, args):
 	args = {"coords_reproject" : [y["cluster"], y["coords"], y["gaia_mag"], y["plots"]],
 			"matching" : [y["cluster"], y["gaia_mag"], y["matchrad"], y["trirad"], y["nobj"], y["plots"]],	
 			"filtering" : [y["cluster"], y["plots"]],
-			"cc_diagram" : [y["cluster"], y["colour1"], y["colour2"], y["adjust"]]
+			"diagram" : [y["cluster"], y["colour1"], y["colour2"], y["adjust"], y["cmd"]]
 			}
 
 	eval(procedure)(*args[procedure])
