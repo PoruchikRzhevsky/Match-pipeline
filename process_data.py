@@ -11,11 +11,26 @@ import os
 plt.rc("font", size=10)
 plt.rcParams["font.family"] = "Times New Roman"
 
-def coords_reproject(cluster, coords, gaia_mag, plots=True):
+def coords_reproject(cluster, coords, gaia_mag, plots=True, members=False):
     # Importing gaia and uv data
     print(f"\nImporting data for {cluster}...\n")
     gaia = pd.read_csv(f'input/star_table_{cluster}.csv')
     uv = pd.read_csv(f'input/uv.csv')
+
+    if members:
+        # Importing members data from Hunt catalog 
+        print(f"\nImporting members data...")
+        members_m = pd.read_csv('../MS_members/members_m_final.csv')
+        members_p = pd.read_csv('../MS_members/members_p_final.csv')
+        print(f"Members data imported.\n")
+
+        members_comb = pd.concat([members_m, members_p], ignore_index=True)
+
+        members_comb_filtered = members_comb[members_comb['name'] == cluster]
+
+        if members_comb_filtered.empty:
+            print("Error: No members data found for the given cluster. Try to look for cluster name in Hunt catalogue. Continue without plotting members.")
+            members = False
 
     # Adding id column to gaia and uv data (from 1 to len(data))
     gaia['id'] = range(1, len(gaia) + 1)   
@@ -49,7 +64,7 @@ def coords_reproject(cluster, coords, gaia_mag, plots=True):
     # Plotting RA-DEC and X-Y coords
     if plots:
         print(f"\nPlotting RA-DEC and X-Y coords...")
-        plot_sky(gaia, uv)
+        plot_sky(gaia, uv, members_comb_filtered, members)
         plot_cart(gaia_cart, uv_cart)
         print(f"Plots saved to plots folder.\n")
 
@@ -228,7 +243,7 @@ def center(ra, dec):
     mean_dec = dec.mean()
     return [mean_ra, mean_dec]
 
-def plot_sky(gaia, uv):
+def plot_sky(gaia, uv, members_comb_filtered, members=False):
     fig, ax = plt.subplots(figsize=(8, 8))
 
     ax.set_xlabel(r"$RA$ [deg]")
@@ -241,6 +256,9 @@ def plot_sky(gaia, uv):
 
     ax.scatter(gaia['ra'], gaia['dec'], color='red', s=10, alpha=0.5, label='Gaia (sky)')
     ax.scatter(uv['ra'], uv['dec'], color='blue', s=10, alpha=0.5, label='UV (sky)')
+
+    if members:
+        ax.scatter(members_comb_filtered['ra'], members_comb_filtered['dec'], color='black', s=20, marker='^', label='Members')
 
     ax.add_patch(Ellipse((center(gaia['ra'], gaia['dec'])), 2*radius(gaia['ra'], gaia['dec'])[0], 2*radius(gaia['ra'], gaia['dec'])[1], edgecolor='red', fc='None', lw=2))
     ax.add_patch(Ellipse((center(uv['ra'], uv['dec'])), 2*radius(uv['ra'], uv['dec'])[0], 2*radius(uv['ra'], uv['dec'])[1], edgecolor='blue', fc='None', lw=2))

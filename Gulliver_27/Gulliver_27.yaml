@@ -7,8 +7,11 @@ coords : [146.0801, -54.1154]
 # Filter for matching
 gaia_mag : 'phot_g_mean_mag'
 
-# Plots to make
+# Do you want to have a plots? 
 plots : True 
+
+# Do you want to plot members of a cluster? (probably will give error, because cluster name could be different from one in Hunt catalogue)
+members : True
 
 # Parameters for matching (http://spiff.rit.edu/match/match-0.16/match.html)
 matchrad : 3.0

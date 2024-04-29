@@ -25,7 +25,10 @@ Pipeline's desined in Model–View–Controller architecture. Main parts of the 
 
    magnitude you will use for matching: "gaia_mag",
 
-   would you like to make plots: "plots" (True - make plots / False - don't make plots),
+   do you want to make plots?: "plots" (True - make plots / False - don't make plots),
+
+   do you want to plot members of a cluster in sky coordinates plot?: "members" (True - add members to the plot / False - don't add members to the plot)
+   Be careful, because members are filtered by given cluster name, which is also presented in members files from Hunt catalogue in column "name". But sometimes cluster name could be different from one in Hunt catalogue and script will give you error, but still will proseed and plot sky coordinates, just without members. 
 
    parameters for matching: "matchrad", "trirad", "nobj",
 
