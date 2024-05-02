@@ -96,8 +96,10 @@ def matching(cluster, gaia_mag, matchrad=3.0, trirad=0.001, nobj=40, plots=True)
     columns_to_add = ['SOURCE_ID', 'phot_g_mean_mag', 'phot_bp_mean_mag', 'phot_rp_mean_mag', 'bp_rp', 'ra', 'dec'] # List of columns to add
     gaia_matched = gaia_matched.drop(columns=gaia_mag) # Remove the column represented by the variable gaia_mag
     gaia_matched = pd.merge(gaia_matched, gaia[['id'] + columns_to_add], on='id') # Merge the dataframes on the 'id' column
+    gaia_matched['SOURCE_ID'] = gaia_matched['SOURCE_ID'].astype('int64')
 
     uv_matched = pd.concat([uv_matched, gaia_matched['SOURCE_ID']], axis=1)
+    uv_matched['SOURCE_ID'] = uv_matched['SOURCE_ID'].astype('int64')
 
     # Saving matched datasets
     print(f"\nSaving matched datasets for {cluster}...")
@@ -135,10 +137,12 @@ def filtering(cluster, plots=True):
     # Filtering gaia data
     mask = gaia_matched['SOURCE_ID'].isin(members_comb_filtered['SOURCE_ID'])
     gaia_filtered = gaia_matched[mask]
+    gaia_filtered['SOURCE_ID'] = gaia_filtered['SOURCE_ID'].astype('int64')
     
     # Filtering uv data
     mask = uv_matched['SOURCE_ID'].isin(members_comb_filtered['SOURCE_ID'])
     uv_filtered = uv_matched[mask]
+    uv_filtered['SOURCE_ID'] = uv_filtered['SOURCE_ID'].astype('int64')
 
     # Saving filtered datasets
     print(f"\nSaving filtered datasets for {cluster}...")
