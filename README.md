@@ -19,6 +19,7 @@ Pipeline's desined in Model–View–Controller architecture. Main parts of the 
    GAIA data obtained by "get_stars_at_oc.py" should be in the same form always. (Sometimes first colums SOURCE_ID could be in lowercase. If it's so, change it to uppercase)
 
 6) In .yaml file add information about:
+   
    your cluster: "cluster",
 
    coordinates of the center of GAIA data: "coords",
@@ -38,7 +39,7 @@ Pipeline's desined in Model–View–Controller architecture. Main parts of the 
 
    do you want to plot CMD?: "cmd" (True - plot / False - don't plot)
 
-7) Script has 4 procedures:
+8) Script has 4 procedures:
    
    "coords_reproject" takes RA and DEC coordinates of objects from UV and GAIA data and using project_coords from Match script to project them on tangential plane and get X and Y coordinates. More information avaliable by link above. 
 
@@ -48,7 +49,7 @@ Pipeline's desined in Model–View–Controller architecture. Main parts of the 
 
    "diagram" creates CC-diagram, or CM-diagram if "cmd: True", in colours/filteres given by "colour1", "colour2" in .yaml file. If you have "adjust : True", firstly you will see interactive plot, when you can adjust vertical and horisontal positions of filtered stars (pink triangles). After you adjusted them, so they will fit some part of MS, close poped up window and your plot will be saved in "plots/" directory. Note that adjustment works only for CC-digram, since only colours presented in MS data files.
 
-8) To run the script procedure by procedure, type in the command line:
+9) To run the script procedure by procedure, type in the command line:
 
    "python3 controller.py Gulliver_27 coords_reproject",
    
@@ -61,5 +62,3 @@ Pipeline's desined in Model–View–Controller architecture. Main parts of the 
     where process is the name of procedure which contains all previously mentioned procedures. RECCOMENDED to do it in this way.  
 
 14) All of the parameters should be changes in .yaml file. Try to avoid modifications of controller. and process_data.py if you're not sure what you're doing. 
-
-Pipeline's desined in Model–View–Controller architecture. Main parts of the script based on Match script, which you should have installed in order to have working pipeline. More information you can find here: http://spiff.rit.edu/match/match-0.16/match.html 
