@@ -93,12 +93,12 @@ def matching(cluster, gaia_mag, matchrad=3.0, trirad=0.001, nobj=40, plots=True)
     print(f"Original gaia data imported.\n")
 
     # Importing matched datasets 
-    columns_to_add = ['SOURCE_ID', 'phot_g_mean_mag', 'phot_bp_mean_mag', 'phot_rp_mean_mag', 'bp_rp', 'ra', 'dec'] # List of columns to add
+    columns_to_add = ['SOURCE_ID', 'phot_g_mean_mag', 'phot_bp_mean_mag', 'phot_rp_mean_mag', 'bp_rp', 'ra', 'dec', 'parallax'] # List of columns to add
     gaia_matched = gaia_matched.drop(columns=gaia_mag) # Remove the column represented by the variable gaia_mag
     gaia_matched = pd.merge(gaia_matched, gaia[['id'] + columns_to_add], on='id') # Merge the dataframes on the 'id' column
     gaia_matched['SOURCE_ID'] = gaia_matched['SOURCE_ID'].astype('int64')
 
-    uv_matched = pd.concat([uv_matched, gaia_matched['SOURCE_ID']], axis=1)
+    uv_matched = pd.concat([uv_matched, gaia_matched[columns_to_add]], axis=1)
     uv_matched['SOURCE_ID'] = uv_matched['SOURCE_ID'].astype('int64')
 
     # Saving matched datasets
