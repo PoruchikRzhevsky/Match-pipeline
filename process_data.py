@@ -1,10 +1,15 @@
 # Importing the libraries
 import pandas as pd
 import numpy as np
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from matplotlib.widgets import Slider
+
 from scipy.optimize import leastsq
+from scipy.interpolate import interp1d
+from scipy.stats import t as t 
+
 import os 
 
 # Plots settings 
@@ -177,10 +182,10 @@ def diagram(cluster, colour1, colour2, adjust=False, cmd=False):
         else:
             print(f"Combination of colours {colour1} and {colour2} cant be used, because filters are located in different files. Try another combination.")
 
-        # Fitting MS
-        coeffs = np.polyfit(ms[colour1], ms[colour2], 9)
-        poly = np.poly1d(coeffs)
-        ms_fit = poly(ms[colour1])
+        # # Fitting MS
+        # coeffs = np.polyfit(ms[colour1], ms[colour2], 9)
+        # poly = np.poly1d(coeffs)
+        # ms_fit = poly(ms[colour1])
 
     # Importing filtered datasets
     print(f"\nImporting filtered datasets for {cluster}...")
@@ -338,6 +343,12 @@ def plot_filtered(gaia_filtered, uv_filtered, gaia_cart, uv_cart):
 def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, adjust):
     fig, ax = plt.subplots(figsize=(8, 8))
 
+    # Plot limits
+    colour1_min = gaia_matched[colour1].min()-0.1
+    colour1_max = gaia_matched[colour1].max()-0.1
+    colour2_min = uv_matched[colour2].min()-0.1
+    colour2_max = uv_matched[colour2].max()-0.1
+
     if adjust: 
         def update(val):
             x = sx.val
@@ -379,7 +390,49 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         x_new = sx.val
         y_new = sy.val
 
+        # Calculating std dev of x and y of matched stars from MS
+        # Limits of membership
+        x_mem_min = gaia_filtered[colour1].min()
+        y_mem_max = uv_filtered[colour2].max()
+
+        ms.loc[:, colour1] = ms[colour1] + x_new
+        ms.loc[:, colour2] = ms[colour2] + y_new
+
+        ms_filtered = ms[(ms[colour1] >= x_mem_min) & (ms[colour2] <= y_mem_max)]
+
+        # Fit a polynomial to the filtered main sequence data
+        coeffs_y = np.polyfit(ms_filtered[colour1], ms_filtered[colour2], 9)
+        poly_y = np.poly1d(coeffs_y)
+        ms_fit_y = poly_y(gaia_filtered[colour1])
+
+        residuals_y = uv_filtered[colour2] - ms_fit_y
+        std_dev_y = np.std(residuals_y)
+
+        x_fitted = np.linspace(min(gaia_filtered[colour1]), max(gaia_filtered[colour1]), 1000)
+        y_fitted_curve = np.polyval(coeffs_y, x_fitted)
+
+        # Create interpolation function to estimate x values based on y_data
+        interp_func = interp1d(y_fitted_curve, x_fitted, bounds_error=False, fill_value="extrapolate")
+        x_estimated = interp_func(uv_filtered[colour2])
+
+        residuals_x = gaia_filtered[colour1] - x_estimated
+        std_dev_x = np.std(residuals_x)
+        
+        t_coeff = t.ppf((1 + 0.9973)/2, len(gaia_filtered[colour1])-1)
+        s_x = std_dev_x/np.sqrt(len(gaia_filtered[colour1]))
+        s_y = std_dev_y/np.sqrt(len(uv_filtered[colour2]))
+        u_x = t_coeff*s_x
+        u_y = t_coeff*s_y
+        
+        print(f"\nStandard deviation of x: {std_dev_x}")
+        print(f"Standard deviation of y: {std_dev_y}")
+        print(f"\nUncertainty of x: {u_x}")
+        print(f"Uncertainty of y: {u_y}\n")
+
+        # Plot the fitted main sequence
         fig2, ax2 = plt.subplots(figsize=(8, 8))
+        ax2.set_xlim(colour1_min, colour1_max)
+        ax2.set_ylim(colour2_min, colour2_max)
         ax2.set_xlabel(f"{colour1} [mag]")
         ax2.xaxis.label.set_fontsize(25)
         ax2.set_ylabel(f"{colour2} [mag]")
@@ -391,13 +444,35 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         plt.tight_layout()  
 
         ax2.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
-        ax2.scatter(gaia_filtered [colour1], uv_filtered [colour2], color='magenta', s=17, marker='^', label='Membership')
+        ax2.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label='Membership')
+            
+        ax2.plot(ms[colour1],ms[colour2], color='red', linewidth=2, label=f'Main sequence ({colour1}={round(x_new, 2)}±{round(u_x, 2)}, {colour2}={round(y_new, 2)}±{round(u_y, 2)})')
+        
+        # ax2.scatter(gaia_filtered[colour1], ms_fit_y, color='blue', s=5)
+        # ax2.scatter(x_estimated, uv_filtered[colour2], color='blue', s=5)
 
-        ax2.plot(ms[colour1]+x_new, ms[colour2]+y_new, color='red', linewidth=2, label=f'Main sequence ({colour1}={x_new:.2}, {colour2}={y_new:.2})')
-        ax2.legend(loc='upper right', fontsize=15)
+        sorted_indices = uv_filtered[colour2].argsort()
+
+        uv_filtered = uv_filtered.iloc[sorted_indices]
+        x_estimated = x_estimated[sorted_indices]
+        
+        ax2.fill_betweenx(uv_filtered[colour2], x_estimated - std_dev_x, x_estimated + std_dev_x, color='red', alpha=0.15, label=f'Std. dev. {colour1}={round(std_dev_x, 3)}')
+
+        # Sort the data by the growing value of x and y
+        sorted_indices = gaia_filtered[colour1].argsort()
+
+        gaia_filtered = gaia_filtered.iloc[sorted_indices]
+        ms_fit_y = ms_fit_y[sorted_indices]
+
+        ax2.fill_between(gaia_filtered[colour1], ms_fit_y - round(std_dev_y, 2), ms_fit_y + round(std_dev_y, 2), color='blue', alpha=0.15, label=f'Std. dev. {colour2}={round(std_dev_y, 3)}')
+
+        ax2.plot()
+        ax2.legend(loc='lower left', fontsize=15)
 
         fig2.savefig(f'plots/CC/{colour1}_{colour2}.png', bbox_inches='tight')
     else:
+        ax.set_xlim(colour1_min, colour1_max)
+        ax.set_ylim(colour2_min, colour2_max)
         ax.set_xlabel(f"{colour1} [mag]")
         ax.xaxis.label.set_fontsize(25)
         ax.set_ylabel(f"{colour2} [mag]")
@@ -412,13 +487,21 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         ax.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
 
         ax.plot(ms[colour1], ms[colour2], color='red', linewidth=2, label='Main sequence')
-        ax.legend(loc='upper right', fontsize=15)
+        ax.legend(loc='lower left', fontsize=15)
 
         fig.savefig(f'plots/CC/{colour1}_{colour2}.png', bbox_inches='tight')
 
 def plot_cmd(gaia_matched, uv_matched, gaia_filtered, uv_filtered, colour1, colour2):
+    # Plot limits
+    colour1_min = gaia_matched[colour1].min()-0.1
+    colour1_max = gaia_matched[colour1].max()-0.1
+    colour2_min = gaia_matched[colour2].min()-0.1
+    colour2_max = gaia_matched[colour2].max()-0.1
+    
     fig, ax = plt.subplots(figsize=(8, 8))
 
+    ax.set_xlim(colour1_min, colour1_max)
+    ax.set_ylim(colour2_min, colour2_max)
     ax.set_xlabel(f"{colour1} [mag]")
     ax.xaxis.label.set_fontsize(25)
     ax.set_ylabel(f"{colour2} [mag]")
@@ -436,6 +519,6 @@ def plot_cmd(gaia_matched, uv_matched, gaia_filtered, uv_filtered, colour1, colo
         ax.scatter(gaia_matched[colour1], gaia_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
         ax.scatter(gaia_filtered[colour1], gaia_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
 
-    ax.legend(loc='upper right', fontsize=15)
+    ax.legend(loc='lower left', fontsize=15)
 
     fig.savefig(f'plots/CMD/{colour1}_{colour2}.png', bbox_inches='tight')
