@@ -446,7 +446,7 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         ax2.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
         ax2.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label='Membership')
             
-        ax2.plot(ms[colour1],ms[colour2], color='red', linewidth=2, label=f'Main sequence ({colour1}={round(x_new, 2)}±{round(u_x, 2)}, {colour2}={round(y_new, 2)}±{round(u_y, 2)})')
+        ax2.plot(ms[colour1],ms[colour2], color='red', linewidth=2, label=f'Main sequence ({colour1}={round(x_new, 2)}$\pm${round(u_x, 2)}, {colour2}={round(y_new, 2)}$\pm${round(u_y, 2)})')
         
         # ax2.scatter(gaia_filtered[colour1], ms_fit_y, color='blue', s=5)
         # ax2.scatter(x_estimated, uv_filtered[colour2], color='blue', s=5)
