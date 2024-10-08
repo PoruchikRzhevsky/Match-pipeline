@@ -405,8 +405,16 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         poly_y = np.poly1d(coeffs_y)
         ms_fit_y = poly_y(gaia_filtered[colour1])
 
-        residuals_y = uv_filtered[colour2] - ms_fit_y
-        std_dev_y = np.std(residuals_y)
+        residuals_y = ms_fit_y - uv_filtered[colour2]
+        std_dev_y_up_list = []
+        std_dev_y_low_list = []
+        for i in range(residuals_y.size):
+            if residuals_y[i] > 0:
+                std_dev_y_low_list.append(residuals_y[i])
+            else:
+                std_dev_y_up_list.append(residuals_y[i])
+        std_dev_y_up = np.mean(np.abs(std_dev_y_up_list))
+        std_dev_y_low = np.mean(np.abs(std_dev_y_low_list))
 
         x_fitted = np.linspace(min(gaia_filtered[colour1]), max(gaia_filtered[colour1]), 1000)
         y_fitted_curve = np.polyval(coeffs_y, x_fitted)
@@ -415,19 +423,34 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         interp_func = interp1d(y_fitted_curve, x_fitted, bounds_error=False, fill_value="extrapolate")
         x_estimated = interp_func(uv_filtered[colour2])
 
-        residuals_x = gaia_filtered[colour1] - x_estimated
-        std_dev_x = np.std(residuals_x)
+        residuals_x = x_estimated - gaia_filtered[colour1]
+        std_dev_x_up_list = []
+        std_dev_x_low_list = []
+        for i in range(residuals_x.size):
+            if residuals_x[i] > 0:
+                std_dev_x_low_list.append(residuals_x[i])
+            else:
+                std_dev_x_up_list.append(residuals_x[i])
+        std_dev_x_up = np.mean(np.abs(std_dev_x_up_list))
+        std_dev_x_low = np.mean(np.abs(std_dev_x_low_list))
+
+        print(f"\nStandard deviation of x: {std_dev_x_up} {std_dev_x_low}")
+        print(f"Standard deviation of y: {std_dev_y_up} {std_dev_y_low}")
         
         t_coeff = t.ppf((1 + 0.9973)/2, len(gaia_filtered[colour1])-1)
-        s_x = std_dev_x/np.sqrt(len(gaia_filtered[colour1]))
-        s_y = std_dev_y/np.sqrt(len(uv_filtered[colour2]))
-        u_x = t_coeff*s_x
-        u_y = t_coeff*s_y
-        
-        print(f"\nStandard deviation of x: {std_dev_x}")
-        print(f"Standard deviation of y: {std_dev_y}")
-        print(f"\nUncertainty of x: {u_x}")
-        print(f"Uncertainty of y: {u_y}\n")
+
+        s_x_up = std_dev_x_up/np.sqrt(len(gaia_filtered[colour1]))
+        s_x_low = std_dev_x_low/np.sqrt(len(gaia_filtered[colour1]))
+        s_y_up = std_dev_y_up/np.sqrt(len(uv_filtered[colour2]))
+        s_y_low = std_dev_y_low/np.sqrt(len(uv_filtered[colour2]))
+
+        u_x_up = t_coeff*s_x_up
+        u_x_low = t_coeff*s_x_low
+        u_y_up = t_coeff*s_y_up
+        u_y_low = t_coeff*s_y_low
+
+        print(f"\nUncertainty of x: {u_x_up} {u_x_low}")
+        print(f"Uncertainty of y: {u_y_up} {u_y_low}\n")
 
         # Plot the fitted main sequence
         fig2, ax2 = plt.subplots(figsize=(8, 8))
@@ -446,7 +469,9 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         ax2.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
         ax2.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label='Membership')
             
-        ax2.plot(ms[colour1],ms[colour2], color='red', linewidth=2, label=f'Main sequence ({colour1}={round(x_new, 2)}$\pm${round(u_x, 2)}, {colour2}={round(y_new, 2)}$\pm${round(u_y, 2)})')
+        ax2.plot(ms[colour1], ms[colour2], color='red', linewidth=2, 
+             label=f'Main sequence ({colour1}={round(x_new, 2)}$^{{+{round(u_x_up, 2)}}}_{{-{round(u_x_low, 2)}}}$, {colour2}={round(y_new, 2)}$^{{+{round(u_y_up, 2)}}}_{{-{round(u_y_low, 2)}}}$)'
+            )
         
         # ax2.scatter(gaia_filtered[colour1], ms_fit_y, color='blue', s=5)
         # ax2.scatter(x_estimated, uv_filtered[colour2], color='blue', s=5)
@@ -456,7 +481,7 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         uv_filtered = uv_filtered.iloc[sorted_indices]
         x_estimated = x_estimated[sorted_indices]
         
-        ax2.fill_betweenx(uv_filtered[colour2], x_estimated - std_dev_x, x_estimated + std_dev_x, color='red', alpha=0.15, label=f'Std. dev. {colour1}={round(std_dev_x, 3)}')
+        ax2.fill_betweenx(uv_filtered[colour2], x_estimated + std_dev_x_up, x_estimated - std_dev_x_low, color='red', alpha=0.15)
 
         # Sort the data by the growing value of x and y
         sorted_indices = gaia_filtered[colour1].argsort()
@@ -464,7 +489,7 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         gaia_filtered = gaia_filtered.iloc[sorted_indices]
         ms_fit_y = ms_fit_y[sorted_indices]
 
-        ax2.fill_between(gaia_filtered[colour1], ms_fit_y - round(std_dev_y, 2), ms_fit_y + round(std_dev_y, 2), color='blue', alpha=0.15, label=f'Std. dev. {colour2}={round(std_dev_y, 3)}')
+        ax2.fill_between(gaia_filtered[colour1], ms_fit_y + std_dev_y_up, ms_fit_y - std_dev_y_low, color='blue', alpha=0.15)
 
         ax2.plot()
         ax2.legend(loc='lower left', fontsize=15)
