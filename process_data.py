@@ -165,7 +165,7 @@ def filtering(cluster, plots=True):
         print(f"\nPlotting filtered stars for {cluster}...")
         plot_filtered(gaia_filtered, uv_filtered, gaia_cart, uv_cart)
 
-def diagram(cluster, colour1, colour2, adjust=False, cmd=False):
+def diagram(cluster, colour1, colour2, data_number, adjust=False, cmd=False, test=False):
     # Importing main sequence data
     print(f"\nImporting main sequence data...")
     ms1 = pd.read_csv('../MS_members/lines_UBPRPG_1.txt', delimiter = '\s+')
@@ -182,58 +182,77 @@ def diagram(cluster, colour1, colour2, adjust=False, cmd=False):
         else:
             print(f"Combination of colours {colour1} and {colour2} cant be used, because filters are located in different files. Try another combination.")
 
-        # # Fitting MS
-        # coeffs = np.polyfit(ms[colour1], ms[colour2], 9)
-        # poly = np.poly1d(coeffs)
-        # ms_fit = poly(ms[colour1])
+    if test:
+        # Importing test datasets
+        print(f"\nImporting test datasets for {cluster}...")
+        colour_string = f'input/{colour1}_{colour2}_{data_number}'
+        test_data = pd.read_csv(f'{colour_string}.txt', sep='\t')
+        print(f"Test datasets imported.\n")
 
-    # Importing filtered datasets
-    print(f"\nImporting filtered datasets for {cluster}...")
-    gaia_filtered = pd.read_csv(f'output/matched/gaia_filtered.dat', sep='\t')
-    uv_filtered = pd.read_csv(f'output/matched/uv_filtered.dat', sep='\t')
-    print(f"Filtered datasets imported.\n")
+        
+        # Remove spaces from column names
+        test_data.columns = test_data.columns.str.replace(' ', '')
 
-    # Importing matched datasets
-    print(f"\nImporting matched datasets for {cluster}...")
-    gaia_matched = pd.read_csv(f'output/matched/gaia_matched.dat', sep='\t')
-    uv_matched = pd.read_csv(f'output/matched/uv_matched.dat', sep='\t')
-    print(f"Matched datasets imported.\n")
+        # Define gaia_filtered and uv_filtered
+        gaia_filtered = pd.DataFrame()
+        uv_filtered = pd.DataFrame()
 
-    # Calculating colors
-    print(f"\nCalculating for {colour1} and {colour2}...")
-    gaia_filter_1 = f'phot_{colour1.split("-")[0].lower()}_mean_mag'
-    gaia_filter_2 = f'phot_{colour1.split("-")[1].lower()}_mean_mag'
-
-    gaia_filtered[colour1] = gaia_filtered[gaia_filter_1] - gaia_filtered[gaia_filter_2]
-    gaia_matched[colour1] = gaia_matched[gaia_filter_1] - gaia_matched[gaia_filter_2]
-
-    if cmd: 
-        if colour2 == 'U':
-            uv_filtered[colour2] = uv_filtered['u'] 
-            uv_matched[colour2] = uv_matched['u'] 
-        else:
-            gaia_filter_3 = f'phot_{colour2.lower()}_mean_mag'
-
-            gaia_filtered[colour2] = gaia_filtered[gaia_filter_3]
-            gaia_matched[colour2] = gaia_matched[gaia_filter_3]
+        gaia_filtered[colour1] = test_data[colour1]
+        uv_filtered[colour2] = test_data[colour2]
     else:
-        gaia_filter_3 = f'phot_{colour2.split("-")[1].lower()}_mean_mag'
+        # Importing filtered datasets
+        print(f"\nImporting filtered datasets for {cluster}...")
+        gaia_filtered = pd.read_csv(f'output/matched/gaia_filtered.dat', sep='\t')
+        uv_filtered = pd.read_csv(f'output/matched/uv_filtered.dat', sep='\t')
+        print(f"Filtered datasets imported.\n")
 
-        uv_filtered[colour2] = uv_filtered['u'] - gaia_filtered[gaia_filter_3]
-        uv_matched[colour2] = uv_matched['u'] - gaia_matched[gaia_filter_3]
+        # Importing matched datasets
+        print(f"\nImporting matched datasets for {cluster}...")
+        gaia_matched = pd.read_csv(f'output/matched/gaia_matched.dat', sep='\t')
+        uv_matched = pd.read_csv(f'output/matched/uv_matched.dat', sep='\t')
+        print(f"Matched datasets imported.\n")
 
-    print(f"Colours calculated.\n")
+        # Calculating colors
+        print(f"\nCalculating colours for {colour1} and {colour2}...")
+        gaia_filter_1 = f'phot_{colour1.split("-")[0].lower()}_mean_mag'
+        gaia_filter_2 = f'phot_{colour1.split("-")[1].lower()}_mean_mag'
+
+        gaia_filtered[colour1] = gaia_filtered[gaia_filter_1] - gaia_filtered[gaia_filter_2]
+        gaia_matched[colour1] = gaia_matched[gaia_filter_1] - gaia_matched[gaia_filter_2]
+
+        print(f"Colours calculated.\n")
+        
+        if cmd: 
+            if colour2 == 'U':
+                uv_filtered[colour2] = uv_filtered['u'] 
+                uv_matched[colour2] = uv_matched['u'] 
+            else:
+                gaia_filter_3 = f'phot_{colour2.lower()}_mean_mag'
+
+                gaia_filtered[colour2] = gaia_filtered[gaia_filter_3]
+                gaia_matched[colour2] = gaia_matched[gaia_filter_3]
+        else:
+            gaia_filter_3 = f'phot_{colour2.split("-")[1].lower()}_mean_mag'
+
+            uv_filtered[colour2] = uv_filtered['u'] - gaia_filtered[gaia_filter_3]
+            uv_matched[colour2] = uv_matched['u'] - gaia_matched[gaia_filter_3]
 
     # Plotting colour-colour diagram
-    if cmd: 
-        print(f"\nPlotting colour-magnitude diagram for {cluster} with colours {colour1} and {colour2}...")
-        if not os.path.isdir(f'plots/CMD'): os.system(f'mkdir -p plots/CMD')
-        plot_cmd(gaia_matched, uv_matched, gaia_filtered, uv_filtered, colour1, colour2)
-        print(f"Colour-magnitude diagram saved.\n")
+    if not test:
+        if cmd: 
+            print(f"\nPlotting colour-magnitude diagram for {cluster} with colours {colour1} and {colour2}...")
+            if not os.path.isdir(f'plots/CMD'): os.system(f'mkdir -p plots/CMD')
+            plot_cmd(gaia_matched, uv_matched, gaia_filtered, uv_filtered, colour1, colour2)
+            print(f"Colour-magnitude diagram saved.\n")
+        else:
+            print(f"\nPlotting colour-colour diagram for {cluster} with colours {colour1} and {colour2}...")
+            if not os.path.isdir(f'plots/CC'): os.system(f'mkdir -p plots/CC')
+            plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test)
+            print(f"Colour-colour diagram saved.\n")
     else:
-        print(f"\nPlotting colour-colour diagram for {cluster} with colours {colour1} and {colour2}...")
+        print(f"\nPlotting colour-colour diagram for test data with colours {colour1} and {colour2}...")
         if not os.path.isdir(f'plots/CC'): os.system(f'mkdir -p plots/CC')
-        plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, adjust)
+        plot_cc([], [], gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test)
         print(f"Colour-colour diagram saved.\n")
 
 def radius(ra, dec):
@@ -340,14 +359,20 @@ def plot_filtered(gaia_filtered, uv_filtered, gaia_cart, uv_cart):
 
     fig.savefig(f'plots/cart_coords_filtered.png', bbox_inches='tight')
 
-def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, adjust):
+def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test=False):
     fig, ax = plt.subplots(figsize=(8, 8))
 
     # Plot limits
-    colour1_min = gaia_matched[colour1].min()-0.1
-    colour1_max = gaia_matched[colour1].max()-0.1
-    colour2_min = uv_matched[colour2].min()-0.1
-    colour2_max = uv_matched[colour2].max()-0.1
+    if test:
+        colour1_min = gaia_filtered[colour1].min()-0.1
+        colour1_max = gaia_filtered[colour1].max()-0.1
+        colour2_min = uv_filtered[colour2].min()-0.1
+        colour2_max = uv_filtered[colour2].max()-0.1
+    else:
+        colour1_min = gaia_matched[colour1].min()-0.1
+        colour1_max = gaia_matched[colour1].max()-0.1
+        colour2_min = uv_matched[colour2].min()-0.1
+        colour2_max = uv_matched[colour2].max()-0.1
 
     if adjust: 
         def update(val):
@@ -368,8 +393,12 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         plt.grid(alpha=0.3)
 
         # Initial data points
-        scatter_matched = ax.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
-        scatter_members = ax.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
+        if test:
+            scatter_members = ax.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
+        else:
+            scatter_matched = ax.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
+            scatter_members = ax.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label=f'Membership')
+
         scatter_ms = ax.scatter(ms[colour1], ms[colour2], color='red', s=5, label='Main sequence')
 
         # Add sliders for interactive update
@@ -390,8 +419,7 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         x_new = sx.val
         y_new = sy.val
 
-        # Calculating std dev of x and y of matched stars from MS
-        # Limits of membership
+        # Sorting the MS with respect to membership stars
         x_mem_min = gaia_filtered[colour1].min()
         y_mem_max = uv_filtered[colour2].max()
 
@@ -400,22 +428,18 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
 
         ms_filtered = ms[(ms[colour1] >= x_mem_min) & (ms[colour2] <= y_mem_max)]
 
-        # Fit a polynomial to the filtered main sequence data
+        # Fitting y-value of MS
         coeffs_y = np.polyfit(ms_filtered[colour1], ms_filtered[colour2], 9)
         poly_y = np.poly1d(coeffs_y)
         ms_fit_y = poly_y(gaia_filtered[colour1])
 
+        # Calculating residuals on y-axis
         residuals_y = ms_fit_y - uv_filtered[colour2]
-        std_dev_y_up_list = []
-        std_dev_y_low_list = []
-        for i in range(residuals_y.size):
-            if residuals_y[i] > 0:
-                std_dev_y_low_list.append(residuals_y[i])
-            else:
-                std_dev_y_up_list.append(residuals_y[i])
-        std_dev_y_up = np.mean(np.abs(std_dev_y_up_list))
-        std_dev_y_low = np.mean(np.abs(std_dev_y_low_list))
+        
+        # Calculating standart deviation of y axis
+        std_dev_y = np.sqrt(np.sum(residuals_y**2)/(len(residuals_y)-1))
 
+        # Fitting x-value of MS
         x_fitted = np.linspace(min(gaia_filtered[colour1]), max(gaia_filtered[colour1]), 1000)
         y_fitted_curve = np.polyval(coeffs_y, x_fitted)
 
@@ -423,34 +447,24 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         interp_func = interp1d(y_fitted_curve, x_fitted, bounds_error=False, fill_value="extrapolate")
         x_estimated = interp_func(uv_filtered[colour2])
 
+        # Calculating residuals on x-axis
         residuals_x = x_estimated - gaia_filtered[colour1]
-        std_dev_x_up_list = []
-        std_dev_x_low_list = []
-        for i in range(residuals_x.size):
-            if residuals_x[i] > 0:
-                std_dev_x_low_list.append(residuals_x[i])
-            else:
-                std_dev_x_up_list.append(residuals_x[i])
-        std_dev_x_up = np.mean(np.abs(std_dev_x_up_list))
-        std_dev_x_low = np.mean(np.abs(std_dev_x_low_list))
 
-        print(f"\nStandard deviation of x: {std_dev_x_up} {std_dev_x_low}")
-        print(f"Standard deviation of y: {std_dev_y_up} {std_dev_y_low}")
+        # Calculating standart deviation of x axis
+        std_dev_x = np.sqrt(np.sum(residuals_x**2)/(len(residuals_x)-1))
         
+        # Estemating t_coeff for 99.73% confidence interval
         t_coeff = t.ppf((1 + 0.9973)/2, len(gaia_filtered[colour1])-1)
 
-        s_x_up = std_dev_x_up/np.sqrt(len(gaia_filtered[colour1]))
-        s_x_low = std_dev_x_low/np.sqrt(len(gaia_filtered[colour1]))
-        s_y_up = std_dev_y_up/np.sqrt(len(uv_filtered[colour2]))
-        s_y_low = std_dev_y_low/np.sqrt(len(uv_filtered[colour2]))
+        # Calculating uncertainty of x and y
+        u_x = t_coeff*std_dev_x/np.sqrt(len(residuals_x))
+        u_y = t_coeff*std_dev_y/np.sqrt(len(residuals_y))
 
-        u_x_up = t_coeff*s_x_up
-        u_x_low = t_coeff*s_x_low
-        u_y_up = t_coeff*s_y_up
-        u_y_low = t_coeff*s_y_low
+        print(f"\nStandard deviation of x: {std_dev_x:.2}")
+        print(f"Standard deviation of y: {std_dev_y:.2}")
 
-        print(f"\nUncertainty of x: {u_x_up} {u_x_low}")
-        print(f"Uncertainty of y: {u_y_up} {u_y_low}\n")
+        print(f"\nUncertainty of x: {u_x:.2}")
+        print(f"Uncertainty of y: {u_y:.2}\n")
 
         # Plot the fitted main sequence
         fig2, ax2 = plt.subplots(figsize=(8, 8))
@@ -466,11 +480,15 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         plt.grid(alpha=0.3)
         plt.tight_layout()  
 
-        ax2.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
-        ax2.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label='Membership')
+        if test:
+            ax2.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label='Membership')
+        else: 
+            ax2.scatter(gaia_matched[colour1], uv_matched[colour2], color='green', s=7, alpha=0.3, label='Matched stars')
+            ax2.scatter(gaia_filtered[colour1], uv_filtered[colour2], color='magenta', s=17, marker='^', label='Membership')    
+        
             
         ax2.plot(ms[colour1], ms[colour2], color='red', linewidth=2, 
-             label=f'Main sequence ({colour1}={round(x_new, 2)}$^{{+{round(u_x_up, 2)}}}_{{-{round(u_x_low, 2)}}}$, {colour2}={round(y_new, 2)}$^{{+{round(u_y_up, 2)}}}_{{-{round(u_y_low, 2)}}}$)'
+            label=f'Main sequence ({colour1}={round(x_new, 2)}$\pm${round(u_x, 2)}, {colour2}={round(y_new, 2)}$\pm${round(u_y, 2)})'
             )
         
         # ax2.scatter(gaia_filtered[colour1], ms_fit_y, color='blue', s=5)
@@ -480,8 +498,8 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
 
         uv_filtered = uv_filtered.iloc[sorted_indices]
         x_estimated = x_estimated[sorted_indices]
-        
-        ax2.fill_betweenx(uv_filtered[colour2], x_estimated + std_dev_x_up, x_estimated - std_dev_x_low, color='red', alpha=0.15)
+
+        ax2.fill_betweenx(uv_filtered[colour2], x_estimated + std_dev_x, x_estimated - std_dev_x, color='red', alpha=0.15)
 
         # Sort the data by the growing value of x and y
         sorted_indices = gaia_filtered[colour1].argsort()
@@ -489,12 +507,15 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         gaia_filtered = gaia_filtered.iloc[sorted_indices]
         ms_fit_y = ms_fit_y[sorted_indices]
 
-        ax2.fill_between(gaia_filtered[colour1], ms_fit_y + std_dev_y_up, ms_fit_y - std_dev_y_low, color='blue', alpha=0.15)
+        ax2.fill_between(gaia_filtered[colour1], ms_fit_y + std_dev_y, ms_fit_y - std_dev_y, color='blue', alpha=0.15)
 
         ax2.plot()
         ax2.legend(loc='lower left', fontsize=15)
-
-        fig2.savefig(f'plots/CC/{colour1}_{colour2}.png', bbox_inches='tight')
+        
+        if test:
+            fig2.savefig(f'plots/CC/{colour1}_{colour2}_{data_number}_test.png', bbox_inches='tight')
+        else:
+            fig2.savefig(f'plots/CC/{colour1}_{colour2}.png', bbox_inches='tight')
     else:
         ax.set_xlim(colour1_min, colour1_max)
         ax.set_ylim(colour2_min, colour2_max)

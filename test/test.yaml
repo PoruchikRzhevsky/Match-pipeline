@@ -1,11 +1,11 @@
 # Configuration
-cluster : 'Gulliver_27'
+cluster : 'test'
 
 # Coords in form of [RA, DEC]
-coords : [146.0801, -54.1154]
+coords : []
 
 # Filter for matching
-gaia_mag : 'phot_g_mean_mag'
+gaia_mag : ''
 
 # Do you want to have a plots? 
 plots : True 
@@ -14,9 +14,9 @@ plots : True
 members : True
 
 # Parameters for matching (http://spiff.rit.edu/match/match-0.16/match.html)
-matchrad : 3.0
-trirad : 0.001
-nobj : 40
+matchrad : 
+trirad : 
+nobj : 
 
 # Colours for CC-diagram
 colour1 : 'BP-RP'
@@ -29,7 +29,7 @@ adjust : True
 cmd : False
 
 # Test the srtipt for simulated data
-test : False
+test : True
 
 # Test dataset number 
-data_number : 
+data_number : 1
