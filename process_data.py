@@ -14,7 +14,7 @@ import os
 
 # Plots settings 
 plt.rc("font", size=10)
-plt.rcParams["font.family"] = "Times New Roman"
+plt.rcParams['font.family'] = 'Liberation Serif'
 
 def coords_reproject(cluster, coords, gaia_mag, plots=True, members=False):
     # Importing gaia and uv data
@@ -165,7 +165,7 @@ def filtering(cluster, plots=True):
         print(f"\nPlotting filtered stars for {cluster}...")
         plot_filtered(gaia_filtered, uv_filtered, gaia_cart, uv_cart)
 
-def diagram(cluster, colour1, colour2, data_number, adjust=False, cmd=False, test=False):
+def diagram(cluster, colour1, colour2, data_number, adjust=False, cmd=False, test=False, show_uncertainty=True):
     # Importing main sequence data
     print(f"\nImporting main sequence data...")
     ms1 = pd.read_csv('../MS_members/lines_UBPRPG_1.txt', delimiter = '\s+')
@@ -247,12 +247,12 @@ def diagram(cluster, colour1, colour2, data_number, adjust=False, cmd=False, tes
         else:
             print(f"\nPlotting colour-colour diagram for {cluster} with colours {colour1} and {colour2}...")
             if not os.path.isdir(f'plots/CC'): os.system(f'mkdir -p plots/CC')
-            plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test)
+            plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test, show_uncertainty)
             print(f"Colour-colour diagram saved.\n")
     else:
         print(f"\nPlotting colour-colour diagram for test data with colours {colour1} and {colour2}...")
         if not os.path.isdir(f'plots/CC'): os.system(f'mkdir -p plots/CC')
-        plot_cc([], [], gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test)
+        plot_cc([], [], gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test, show_uncertainty)
         print(f"Colour-colour diagram saved.\n")
 
 def radius(ra, dec):
@@ -359,7 +359,7 @@ def plot_filtered(gaia_filtered, uv_filtered, gaia_cart, uv_cart):
 
     fig.savefig(f'plots/cart_coords_filtered.png', bbox_inches='tight')
 
-def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test=False):
+def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, colour2, data_number, adjust, test=False, show_uncertainty=True):
     fig, ax = plt.subplots(figsize=(8, 8))
 
     # Plot limits
@@ -494,20 +494,21 @@ def plot_cc(gaia_matched, uv_matched, gaia_filtered, uv_filtered, ms, colour1, c
         # ax2.scatter(gaia_filtered[colour1], ms_fit_y, color='blue', s=5)
         # ax2.scatter(x_estimated, uv_filtered[colour2], color='blue', s=5)
 
-        sorted_indices = uv_filtered[colour2].argsort()
+        if show_uncertainty:
+            sorted_indices = uv_filtered[colour2].argsort()
 
-        uv_filtered = uv_filtered.iloc[sorted_indices]
-        x_estimated = x_estimated[sorted_indices]
+            uv_filtered = uv_filtered.iloc[sorted_indices]
+            x_estimated = x_estimated[sorted_indices]
 
-        ax2.fill_betweenx(uv_filtered[colour2], x_estimated + std_dev_x, x_estimated - std_dev_x, color='red', alpha=0.15)
+            ax2.fill_betweenx(uv_filtered[colour2], x_estimated + std_dev_x, x_estimated - std_dev_x, color='red', alpha=0.15)
 
-        # Sort the data by the growing value of x and y
-        sorted_indices = gaia_filtered[colour1].argsort()
+            # Sort the data by the growing value of x and y
+            sorted_indices = gaia_filtered[colour1].argsort()
 
-        gaia_filtered = gaia_filtered.iloc[sorted_indices]
-        ms_fit_y = ms_fit_y[sorted_indices]
+            gaia_filtered = gaia_filtered.iloc[sorted_indices]
+            ms_fit_y = ms_fit_y[sorted_indices]
 
-        ax2.fill_between(gaia_filtered[colour1], ms_fit_y + std_dev_y, ms_fit_y - std_dev_y, color='blue', alpha=0.15)
+            ax2.fill_between(gaia_filtered[colour1], ms_fit_y + std_dev_y, ms_fit_y - std_dev_y, color='blue', alpha=0.15)
 
         ax2.plot()
         ax2.legend(loc='lower left', fontsize=15)

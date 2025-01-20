@@ -44,7 +44,7 @@ def run(cluster, procedure, args):
 	args = {"coords_reproject" : [y["cluster"], y["coords"], y["gaia_mag"], y["plots"], y["members"]],
 			"matching" : [y["cluster"], y["gaia_mag"], y["matchrad"], y["trirad"], y["nobj"], y["plots"]],	
 			"filtering" : [y["cluster"], y["plots"]],
-			"diagram" : [y["cluster"], y["colour1"], y["colour2"], y["data_number"], y["adjust"], y["cmd"], y["test"]]
+			"diagram" : [y["cluster"], y["colour1"], y["colour2"], y["data_number"], y["adjust"], y["cmd"], y["test"], y["show_uncertainty"]]
 			}
 
 	eval(procedure)(*args[procedure])

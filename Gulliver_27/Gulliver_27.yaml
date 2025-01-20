@@ -33,3 +33,6 @@ test : False
 
 # Test dataset number 
 data_number : 
+
+# Show uncertainties in the CC-diagram?
+show_uncertainty : False
